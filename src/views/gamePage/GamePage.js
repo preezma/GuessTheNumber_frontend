@@ -1,12 +1,14 @@
-import { useState } from "react";
-import { useParams, useNavigate } from "react-router-dom";
+import { useState, useEffect } from "react";
+import { useParams } from "react-router-dom";
 import { useDispatch, useSelector } from "react-redux";
 import { checkNumber } from "../../api";
 import { getGameInfo } from "../../reduxStore/actions";
+import { DateTime } from "luxon";
 import Timer from "../../components/timer/Timer";
 import AnimatedMatrixBackground from "../../components/animatedMatrixBackground/AnimatedMatrix";
 import AnimatedInfoText from "../../components/animatedInfo/AnimatedInfo";
 import WinModal from "./components/WinModal";
+import LoseModal from "./components/LoseModal";
 import {
   FlexContainer,
   GameContainer,
@@ -15,15 +17,35 @@ import {
   CheckButton,
   GameBox,
 } from "./StyledGamePage";
+const REMAINING_TIME = 180;
+
 const GamePage = () => {
   const [value, setValue] = useState("");
+  const [prevValue, setPrevValue] = useState("");
   const [error, setError] = useState(false);
-  const [isNotMatched, setNotMatched] = useState(false);
-  const [isOpenedWinModal, setOpenedWinModal] = useState(true);
+  const [gameStatus, setGameStatus] = useState("");
+  const [isOpenedWinModal, setOpenedWinModal] = useState(false);
+  const [isOpenedLoseModal, setOpenedLoseModal] = useState(false);
   const dispatch = useDispatch();
-  const { game } = useSelector((state) => state.game);
-  const navigate = useNavigate();
   const { id } = useParams();
+  const { game } = useSelector((state) => state.game);
+  const startTime = DateTime.fromISO(game.startTime);
+  const diff = DateTime.local().diff(startTime).as("seconds");
+  const remainingTime = diff < 180 ? 180 - diff : 0;
+  useEffect(() => {
+    if (id && !game._id) {
+      getGameInfo(id)(dispatch);
+    }
+  }, [dispatch, game._id, id]);
+
+  useEffect(() => {
+    if (game.status === "expired" || gameStatus === "expired") {
+      setOpenedLoseModal(true);
+    } else if (game.status === "success" || gameStatus === "success") {
+      setOpenedWinModal(true);
+    }
+  }, [game, gameStatus, remainingTime]);
+
   const handleChangeValue = (e) => {
     const { value } = e.target;
     if (!isNaN(value)) {
@@ -33,37 +55,48 @@ const GamePage = () => {
       setError(true);
     }
   };
-
+  const disabled =
+    value.length < 4 ||
+    game.status === "expired" ||
+    remainingTime === 0 ||
+    gameStatus === "expired";
   const handleCheckValue = () =>
-    checkNumber(id, value).then((res) => {
+    checkNumber(id, { number: value }).then((res) => {
+      setGameStatus(res.data.status);
+      setPrevValue(value);
       setValue("");
-      console.log(res);
+      if (res.status === "expired") {
+        setOpenedLoseModal(true);
+      }
     });
-
-  const handleRematchGame = () => {
-    getGameInfo()(dispatch).then((res) => navigate(`/game/${res._id}`));
-  };
   return (
     <FlexContainer>
       <GameContainer>
         <h1>Hey! You have 3 minutes to guess the number! Hurry up !</h1>
         <h3>Enter 4 digits and click Check</h3>
-        {/* <Timer durationFull={30} remainingTime={game.endDate} /> */}
-        <Timer durationFull={30} remainingTime={30} />
+        <Timer durationFull={REMAINING_TIME} remainingTime={remainingTime} />
         <GameBox>
           <NumberInput
             value={value}
             onChange={handleChangeValue}
             maxLength="4"
             autoFocus
+            onKeyDown={(e) => {
+              if (e.key === "Enter" && !disabled) handleCheckValue();
+            }}
           />
-          <CheckButton onClick={handleCheckValue} disabled={value.length < 4}>
+          <CheckButton onClick={handleCheckValue} disabled={disabled}>
             Check
           </CheckButton>
         </GameBox>
         {error && <ErrorText>Please Add only Digits!</ErrorText>}
 
-        {isNotMatched && <AnimatedInfoText info={`${value} is less`} />}
+        {gameStatus === "less" && (
+          <AnimatedInfoText info={`${prevValue} is greater`} />
+        )}
+        {gameStatus === "greater" && (
+          <AnimatedInfoText info={`${prevValue} is less`} />
+        )}
       </GameContainer>
 
       <AnimatedMatrixBackground />
@@ -71,7 +104,10 @@ const GamePage = () => {
       <WinModal
         open={isOpenedWinModal}
         closeModal={() => setOpenedWinModal(false)}
-        handleRematch={handleRematchGame}
+      />
+      <LoseModal
+        open={isOpenedLoseModal}
+        closeModal={() => setOpenedLoseModal(false)}
       />
     </FlexContainer>
   );

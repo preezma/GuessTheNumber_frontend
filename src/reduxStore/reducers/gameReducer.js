@@ -3,7 +3,7 @@ import ActionTypes from "../actionTypes";
 const initialState = {
   error: null,
   success: false,
-  game: [],
+  game: {},
 };
 
 function gameReducer(state = initialState, action) {
@@ -12,12 +12,13 @@ function gameReducer(state = initialState, action) {
     case ActionTypes.GET_GAME: {
       return { ...state };
     }
+
     case ActionTypes.GET_GAME_SUCCESS: {
       return {
         ...state,
         error: null,
         success: true,
-        game: action.game,
+        game: action.data,
       };
     }
     case ActionTypes.GET_GAME_ERROR: {

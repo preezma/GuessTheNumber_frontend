@@ -10,7 +10,7 @@ const AnimatedNumbersBackground = () => {
     <SquareContainer>
       <Squares>
         {numsArr.map((num) => (
-          <NumberSquare keys={num}>{num}</NumberSquare>
+          <NumberSquare key={num}>{num}</NumberSquare>
         ))}
       </Squares>
     </SquareContainer>

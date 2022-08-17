@@ -1,16 +1,26 @@
+import { useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { useDispatch } from "react-redux";
+import { useDispatch, useSelector } from "react-redux";
 import { getGameInfo } from "../../reduxStore/actions";
 import AnimatedNumbersBackground from "../../components/animatedNumberBackground/AnimatedNumbers";
 import AnimatedButton from "../../components/animatedButton/AnimatedButton";
 import { InfoContainer, AnimatedText } from "./StyledStartPage";
 
+
 const StartPage = () => {
   const dispatch = useDispatch();
+  const { game } = useSelector((state) => state.game);
   const navigate = useNavigate();
+  useEffect(() => {
+    if (game._id) {
+      navigate(`/game/${game._id}`);
+    }
+  }, [game._id, navigate]);
+
   const handleStartGame = () => {
-    getGameInfo()(dispatch).then((res) => navigate(`/game/${res._id}`));
+    dispatch(getGameInfo());
   };
+
   return (
     <>
       <InfoContainer>
