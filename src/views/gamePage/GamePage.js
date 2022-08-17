@@ -22,6 +22,7 @@ const REMAINING_TIME = 180;
 const GamePage = () => {
   const [value, setValue] = useState("");
   const [prevValue, setPrevValue] = useState("");
+  const [currentTime, setCurrentTime] = useState(null);
   const [error, setError] = useState(false);
   const [gameStatus, setGameStatus] = useState("");
   const [isOpenedWinModal, setOpenedWinModal] = useState(false);
@@ -30,8 +31,11 @@ const GamePage = () => {
   const { id } = useParams();
   const { game } = useSelector((state) => state.game);
   const startTime = DateTime.fromISO(game.startTime);
-  const diff = DateTime.local().diff(startTime).as("seconds");
-  const remainingTime = diff < 180 ? 180 - diff : 0;
+  const diff = currentTime?.diff(startTime).as("seconds");
+  const remainingTime = REMAINING_TIME - diff;
+  useEffect(() => {
+    setCurrentTime(DateTime.local());
+  }, []);
   useEffect(() => {
     if (id && !game._id) {
       getGameInfo(id)(dispatch);
@@ -39,9 +43,9 @@ const GamePage = () => {
   }, [dispatch, game._id, id]);
 
   useEffect(() => {
-    if (game.status === "expired" || gameStatus === "expired") {
+    if (remainingTime < 0 || gameStatus === "expired") {
       setOpenedLoseModal(true);
-    } else if (game.status === "success" || gameStatus === "success") {
+    } else if (game.status === "won" || gameStatus === "won") {
       setOpenedWinModal(true);
     }
   }, [game, gameStatus, remainingTime]);
@@ -61,7 +65,7 @@ const GamePage = () => {
     remainingTime === 0 ||
     gameStatus === "expired";
   const handleCheckValue = () =>
-    checkNumber(id, { number: value }).then((res) => {
+    checkNumber(id, { number: Number(value) }).then((res) => {
       setGameStatus(res.data.status);
       setPrevValue(value);
       setValue("");
@@ -69,12 +73,17 @@ const GamePage = () => {
         setOpenedLoseModal(true);
       }
     });
+
   return (
     <FlexContainer>
       <GameContainer>
         <h1>Hey! You have 3 minutes to guess the number! Hurry up !</h1>
         <h3>Enter 4 digits and click Check</h3>
-        <Timer durationFull={REMAINING_TIME} remainingTime={remainingTime} />
+        <Timer
+          durationFull={REMAINING_TIME}
+          remainingTime={remainingTime}
+          onAnimationEnd={() => setOpenedLoseModal(true)}
+        />
         <GameBox>
           <NumberInput
             value={value}
@@ -103,11 +112,17 @@ const GamePage = () => {
 
       <WinModal
         open={isOpenedWinModal}
-        closeModal={() => setOpenedWinModal(false)}
+        closeModal={() => {
+          setOpenedWinModal(false);
+          setGameStatus("");
+        }}
       />
       <LoseModal
         open={isOpenedLoseModal}
-        closeModal={() => setOpenedLoseModal(false)}
+        closeModal={() => {
+          setOpenedLoseModal(false);
+          setGameStatus("");
+        }}
       />
     </FlexContainer>
   );
