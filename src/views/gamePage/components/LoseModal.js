@@ -20,7 +20,7 @@ const WinModal = ({ open, closeModal }) => {
 
   const handleRematchGame = () => {
     getGameInfo()(dispatch);
-    closeModal();
+    handleCloseModal();
   };
 
   return (
