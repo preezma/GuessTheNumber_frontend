@@ -1,4 +1,4 @@
-import { StrictMode, Suspense } from "react";
+import { Suspense } from "react";
 import ReactDOM from "react-dom/client";
 import { Provider } from "react-redux";
 import store from "./reduxStore/Store";
@@ -10,9 +10,7 @@ const root = ReactDOM.createRoot(document.getElementById("root"));
 root.render(
   <Suspense fallback={<p>loading...</p>}>
     <Provider store={store}>
-      <StrictMode>
-        <App />
-      </StrictMode>
+      <App />
     </Provider>
   </Suspense>
 );
