@@ -4,9 +4,8 @@ const TIMER_DASH_ARRAY = 250;
 const Timer = ({ durationFull, state, remainingTime, onAnimationEnd }) => {
   const circle = useRef(null);
   const [keyFrame, setKeyframe] = useState("");
-  const remainingDurationPercents = (durationFull / 100) * remainingTime;
-  const dashOffset =
-    TIMER_DASH_ARRAY * ((100 - remainingDurationPercents) / 100);
+  const remainingDurationPercents = (remainingTime / durationFull) * 100;
+  const dashOffset = TIMER_DASH_ARRAY * (remainingDurationPercents / 100);
   useEffect(() => {
     setKeyframe(`@keyframes timerProgress {
       from {
@@ -38,6 +37,7 @@ const Timer = ({ durationFull, state, remainingTime, onAnimationEnd }) => {
           <circle
             ref={circle}
             className="svg-pi-indicator"
+            data-testId="timer-circle"
             onAnimationEnd={onAnimationEndHandler}
           />
         </svg>
